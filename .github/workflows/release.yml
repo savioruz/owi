@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-macos:
+    name: Build macOS Binary
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: "5.10"
+
+      - name: Build Release
+        run: swift build -c release --arch arm64 --arch x86_64
+
+      - name: Package Binary
+        run: |
+          mkdir -p release
+          cp .build/apple/Products/Release/owi release/
+          cd release
+          tar -czf owi-macos.tar.gz owi
+          shasum -a 256 owi-macos.tar.gz > owi-macos.tar.gz.sha256
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: owi-macos
+          path: release/owi-macos.tar.gz*
+
+  build-linux:
+    name: Build Linux Binary
+    runs-on: ubuntu-latest
+    container:
+      image: swift:5.10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Release
+        run: swift build -c release
+
+      - name: Package Binary
+        run: |
+          mkdir -p release
+          cp .build/release/owi release/
+          cd release
+          tar -czf owi-linux.tar.gz owi
+          sha256sum owi-linux.tar.gz > owi-linux.tar.gz.sha256
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: owi-linux
+          path: release/owi-linux.tar.gz*
+
+  create-release:
+    name: Create Release
+    needs: [build-macos, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download macOS Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: owi-macos
+          path: release
+
+      - name: Download Linux Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: owi-linux
+          path: release
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            release/owi-macos.tar.gz
+            release/owi-macos.tar.gz.sha256
+            release/owi-linux.tar.gz
+            release/owi-linux.tar.gz.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  create-homebrew-formula:
+    name: Update Homebrew Formula
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Generate Homebrew Formula
+        run: |
+          cat > owi.rb << 'EOF'
+          class Owi < Formula
+            desc "Simple database migration tool for Swift and Vapor"
+            homepage "https://github.com/${{ github.repository }}"
+            version "${{ steps.get_version.outputs.VERSION }}"
+            
+            on_macos do
+              url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/owi-macos.tar.gz"
+              sha256 "MACOS_SHA256"
+            end
+            
+            on_linux do
+              url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/owi-linux.tar.gz"
+              sha256 "LINUX_SHA256"
+            end
+            
+            def install
+              bin.install "owi"
+            end
+            
+            test do
+              system "#{bin}/owi", "--version"
+            end
+          end
+          EOF
+
+      - name: Upload Formula
+        uses: actions/upload-artifact@v4
+        with:
+          name: homebrew-formula
+          path: owi.rb

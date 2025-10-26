@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:owi}",
+            "name": "Debug owi",
+            "program": "${workspaceFolder:owi}/.build/debug/owi",
+            "preLaunchTask": "swift: Build Debug owi"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:owi}",
+            "name": "Release owi",
+            "program": "${workspaceFolder:owi}/.build/release/owi",
+            "preLaunchTask": "swift: Build Release owi"
+        }
+    ]
+}
