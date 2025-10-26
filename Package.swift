@@ -43,7 +43,7 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "OwiTests",
+            name: "owiTests",
             dependencies: ["Owi"]
         ),
     ]
