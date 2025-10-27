@@ -9,16 +9,43 @@ A clean and simple database migration tool for Swift, designed to work seamlessl
 Add to your `Package.swift`:
 
 ```swift
-    .package(url: "https://github.com/savioruz/owi.git", from: "0.0.1")
+.package(url: "https://github.com/savioruz/owi.git", from: "0.0.1")
 ```
 
 Then add to your target:
 
 ```swift
-    .product(name: "Owi", package: "owi")
+.product(name: "Owi", package: "owi")
 ```
 
-### @TODO As a CLI Tool
+### As a CLI Tool
+
+#### Quick Install
+
+Using the install script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/savioruz/owi/main/install.sh | sh
+```
+
+Or download and run:
+
+```bash
+curl -fsSL -o install.sh https://raw.githubusercontent.com/savioruz/owi/main/install.sh
+chmod +x install.sh
+./install.sh
+```
+
+#### Homebrew
+
+```bash
+brew tap savioruz/homebrew-tap
+brew install owi
+```
+
+#### Manual Installation
+
+Download the latest release from [GitHub Releases](https://github.com/savioruz/owi/releases):
 
 ## Migration File Format
 
