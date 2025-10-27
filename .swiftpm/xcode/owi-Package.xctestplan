@@ -1,0 +1,28 @@
+{
+  "configurations" : [
+    {
+      "id" : "7D8D4235-2060-4E64-B7AF-2278DA6B9413",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:",
+      "identifier" : "OwiTests",
+      "name" : "OwiTests"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "OwiTests",
+        "name" : "OwiTests"
+      }
+    }
+  ],
+  "version" : 1
+}
