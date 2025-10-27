@@ -1,21 +1,15 @@
 import Vapor
 import Owi
 
-// Example of integrating Owi with Vapor
-
 // In your configure.swift file, add this function:
 func runMigrations(_ app: Application) async throws {
-    // Get database configuration from environment
-    let dbPath = Environment.get("DATABASE_PATH") ?? "./vapor.db"
-    
-    // Create Owi driver using SQLiteKit configuration
-    let config = SQLiteConfiguration(storage: .file(path: dbPath))
-    let driver = try await SQLiteDriver(configuration: config)
+    // Use Vapor's existing database connection (recommended)
+    let driver = SQLiteDriver(database: app.db(.sqlite))
     
     // Create migration runner
     let runner = Runner(
         driver: driver,
-        migrationDir: "./migrations"
+        migrationDir: "./Migrations"
     )
     
     // Log migration status
@@ -28,8 +22,7 @@ func runMigrations(_ app: Application) async throws {
     try await runner.status()
     app.logger.info("Migration complete!")
     
-    // Clean up
-    try await runner.close()
+    // No close() needed - Vapor manages the connection!
 }
 
 // Then in your configure function:
@@ -47,22 +40,39 @@ public func configure(_ app: Application) async throws {
 // -------------------------------------------
 
 func runPostgresMigrations(_ app: Application) async throws {
-    let config = PostgresConfiguration(
-        hostname: Environment.get("DATABASE_HOST") ?? "localhost",
-        port: Int(Environment.get("DATABASE_PORT") ?? "5432") ?? 5432,
-        username: Environment.get("DATABASE_USERNAME") ?? "postgres",
-        password: Environment.get("DATABASE_PASSWORD") ?? "",,
-        database: Environment.get("DATABASE_NAME") ?? "vapor_db",
-        tls: .disable  // from .env or .prefer/.require with TLS config
-    )
-    
-    let driver = try await PostgresDriver(configuration: config)
-    let runner = Runner(driver: driver, migrationDir: "./migrations")
+    let driver = PostgresDriver(database: app.db(.psql))
+    let runner = Runner(driver: driver, migrationDir: "./Migrations")
     
     app.logger.info("Running database migrations...")
     try await runner.migrate()
     app.logger.info("Migration complete!")
     
+    // No close() needed!
+}
+
+// -------------------------------------------
+// Alternative Standalone connection
+// -------------------------------------------
+
+func runStandaloneMigrations(_ app: Application) async throws {
+    // Only use this if NOT using Vapor's database
+    let config = PostgresConfiguration(
+        hostname: Environment.get("DATABASE_HOST") ?? "localhost",
+        port: Int(Environment.get("DATABASE_PORT") ?? "5432") ?? 5432,
+        username: Environment.get("DATABASE_USERNAME") ?? "postgres",
+        password: Environment.get("DATABASE_PASSWORD") ?? "",
+        database: Environment.get("DATABASE_NAME") ?? "vapor_db",
+        tls: .disable
+    )
+    
+    let driver = try await PostgresDriver(configuration: config)
+    let runner = Runner(driver: driver, migrationDir: "./Migrations")
+    
+    app.logger.info("Running database migrations...")
+    try await runner.migrate()
+    app.logger.info("Migration complete!")
+    
+    // IMPORTANT: Must close when using configuration-based init!
     try await runner.close()
 }
 
@@ -73,33 +83,48 @@ func runPostgresMigrations(_ app: Application) async throws {
 func routes(_ app: Application) throws {
     // Add a protected endpoint to run migrations manually
     app.get("admin", "migrate") { req async throws -> String in
-        // Add authentication here!
+        // TODO: Add authentication here!
         
-        let config = SQLiteConfiguration(storage: .file(path: "./vapor.db"))
-        let driver = try await SQLiteDriver(configuration: config)
-        let runner = Runner(driver: driver, migrationDir: "./migrations")
+        // Use Vapor's existing database connection
+        let driver = SQLiteDriver(database: app.db(.sqlite))
+        let runner = Runner(driver: driver, migrationDir: "./Migrations")
         
         try await runner.migrate()
-        try await runner.close()
+        // No close() needed!
         
         return "Migrations completed successfully!"
     }
     
     // Check migration status
     app.get("admin", "migrate", "status") { req async throws -> [String: Any] in
-        // Add authentication here!
+        // TODO: Add authentication here!
         
-        let config = SQLiteConfiguration(storage: .file(path: "./vapor.db"))
-        let driver = try await SQLiteDriver(configuration: config)
-        let tracker = Tracker(driver: driver)
+        // Use Vapor's existing database connection
+        let driver = SQLiteDriver(database: app.db(.sqlite))
+        let tracker = Tracker(driver: driver, tableName: "owi_schema")
         
         try await tracker.setup()
-        let applied = try await tracker.getAppliedMigrations()
-        try await driver.close()
+        let currentVersion = try await tracker.getVersion()
+        let isDirty = try await tracker.isDirty()
+        // No close() needed!
         
         return [
-            "total": applied.count,
-            "migrations": applied.map { ["id": $0.id, "applied_at": $0.appliedAt] }
+            "current_version": currentVersion,
+            "dirty": isDirty
         ]
     }
+}
+
+// -------------------------------------------
+// Complete example for MySQL
+// -------------------------------------------
+
+func runMySQLMigrations(_ app: Application) async throws {
+    // Use Vapor's existing MySQL connection
+    let driver = MySQLDriver(database: app.db(.mysql))
+    let runner = Runner(driver: driver, migrationDir: "./Migrations")
+    
+    app.logger.info("Running MySQL migrations...")
+    try await runner.migrate()
+    app.logger.info("Migration complete!")
 }
