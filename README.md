@@ -9,7 +9,7 @@ A clean and simple database migration tool for Swift, designed to work seamlessl
 Add to your `Package.swift`:
 
 ```swift
-    .package(url: "https://github.com/yourusername/owi.git", from: "1.0.0")
+    .package(url: "https://github.com/savioruz/owi.git", from: "0.0.1")
 ```
 
 Then add to your target:

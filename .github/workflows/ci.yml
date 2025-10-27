@@ -16,6 +16,9 @@ jobs:
 
       - name: Build
         run: swift build
+      
+      - name: Run Tests
+        run: swift test
 
   test-linux:
     name: Test on Linux
@@ -26,5 +29,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxctest-dev
+
       - name: Build
         run: swift build
+      
+      - name: Run Tests
+        run: swift test

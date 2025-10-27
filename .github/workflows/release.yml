@@ -130,27 +130,44 @@ jobs:
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Extract SHA256 checksums
+        id: checksums
+        run: |
+          MACOS_SHA=$(cat release-artifacts/owi-macos/owi-macos.tar.gz.sha256 | awk '{print $1}')
+          LINUX_X86_SHA=$(cat release-artifacts/owi-linux-x86_64/owi-linux-x86_64.tar.gz.sha256 | awk '{print $1}')
+          LINUX_ARM_SHA=$(cat release-artifacts/owi-linux-aarch64/owi-linux-aarch64.tar.gz.sha256 | awk '{print $1}')
+          
+          echo "macos_sha=${MACOS_SHA}" >> $GITHUB_OUTPUT
+          echo "linux_x86_sha=${LINUX_X86_SHA}" >> $GITHUB_OUTPUT
+          echo "linux_arm_sha=${LINUX_ARM_SHA}" >> $GITHUB_OUTPUT
+
       - name: Generate Homebrew Formula
         run: |
-          cat > owi.rb << 'EOF'
+          cat > owi.rb << EOF
           class Owi < Formula
             desc "Simple database migration tool for Swift and Vapor"
             homepage "https://github.com/${{ github.repository }}"
             version "${{ steps.get_version.outputs.VERSION }}"
+            license "MIT"
             
             on_macos do
               url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/owi-macos.tar.gz"
-              sha256 "MACOS_SHA256"
+              sha256 "${{ steps.checksums.outputs.macos_sha }}"
             end
             
             on_linux do
               on_intel do
                 url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/owi-linux-x86_64.tar.gz"
-                sha256 "LINUX_X86_64_SHA256"
+                sha256 "${{ steps.checksums.outputs.linux_x86_sha }}"
               end
               on_arm do
                 url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/owi-linux-aarch64.tar.gz"
-                sha256 "LINUX_AARCH64_SHA256"
+                sha256 "${{ steps.checksums.outputs.linux_arm_sha }}"
               end
             end
             
@@ -164,8 +181,34 @@ jobs:
           end
           EOF
 
-      - name: Upload Formula
+      - name: Upload Formula as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: homebrew-formula
           path: owi.rb
+
+      - name: Update Homebrew Tap
+        if: github.repository_owner == 'savioruz'
+        env:
+          TAP_REPO_TOKEN: ${{ secrets.TAP_REPO_TOKEN }}
+        run: |
+          if [ -z "$TAP_REPO_TOKEN" ]; then
+            echo "TAP_REPO_TOKEN not set, skipping tap update"
+            exit 0
+          fi
+          
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Clone the tap repository
+          git clone https://x-access-token:${TAP_REPO_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-tap.git tap-repo
+          cd tap-repo
+          
+          # Copy the formula
+          mkdir -p Formula
+          cp ../owi.rb Formula/owi.rb
+          
+          # Commit and push
+          git add Formula/owi.rb
+          git commit -m "Update owi to v${{ steps.get_version.outputs.VERSION }}" || echo "No changes to commit"
+          git push origin main || git push origin master
