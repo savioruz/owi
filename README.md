@@ -1,5 +1,10 @@
 # Owi - Simple Database Migrations for Swift
 
+![GitHub Release](https://img.shields.io/github/v/release/savioruz/owi)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/savioruz/owi/ci.yml)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/savioruz/owi/total)
+
+
 A clean and simple database migration tool for Swift, designed to work seamlessly with Vapor and other Swift web frameworks.
 
 # Table of Contents
