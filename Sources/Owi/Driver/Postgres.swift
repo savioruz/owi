@@ -7,10 +7,14 @@ import NIOCore
 public typealias PostgresConfiguration = SQLPostgresConfiguration
 
 public final class PostgresDriver: DatabaseDriver, @unchecked Sendable {
-  private let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>
-  private let eventLoopGroup: EventLoopGroup
+  private let pool: EventLoopGroupConnectionPool<PostgresConnectionSource>?
+  private let eventLoopGroup: EventLoopGroup?
   private let db: any PostgresDatabase
+  private let shouldClose: Bool
 
+  /// Initialize with a configuration (creates and manages its own connection pool)
+  /// Use this for CLI tools or standalone applications
+  /// Remember to call `close()` when done!
   public init(configuration: PostgresConfiguration) async throws {
     self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
 
@@ -20,10 +24,21 @@ public final class PostgresDriver: DatabaseDriver, @unchecked Sendable {
 
     self.pool = EventLoopGroupConnectionPool(
       source: source,
-      on: eventLoopGroup
+      on: eventLoopGroup!
     )
 
-    self.db = pool.database(logger: Logger(label: "owi.postgres"))
+    self.db = pool!.database(logger: Logger(label: "owi.postgres"))
+    self.shouldClose = true
+  }
+
+  /// Initialize with an existing database connection (e.g., from Vapor)
+  /// Use this when integrating with Vapor - no need to call `close()`
+  /// Example: `PostgresDriver(database: app.db(.psql))`
+  public init(database: any PostgresDatabase) {
+    self.pool = nil
+    self.eventLoopGroup = nil
+    self.db = database
+    self.shouldClose = false
   }
 
   public func execute(_ sql: String) async throws {
@@ -80,6 +95,9 @@ public final class PostgresDriver: DatabaseDriver, @unchecked Sendable {
   }
 
   public func close() async throws {
-    try await eventLoopGroup.shutdownGracefully()
+    // Only close if we manage the connection pool
+    if shouldClose, let eventLoopGroup = eventLoopGroup {
+      try await eventLoopGroup.shutdownGracefully()
+    }
   }
 }

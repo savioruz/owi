@@ -2,6 +2,53 @@
 
 A clean and simple database migration tool for Swift, designed to work seamlessly with Vapor and other Swift web frameworks.
 
+# Table of Contents
+
+1. [Overview](#overview)
+   - [Introduction](#overview)
+   - [Features](#overview)
+
+2. [Installation](#installation)
+   - [As a Library (for Vapor apps)](#as-a-library-for-vapor-apps)
+   - [As a CLI Tool](#as-a-cli-tool)
+     - [Quick Install](#quick-install)
+     - [Homebrew Installation](#homebrew)
+     - [Manual Installation](#manual-installation)
+
+3. [Migration File Format](#migration-file-format)
+   - [Example](#migration-file-format)
+   - [Rules](#rules)
+
+4. [CLI Usage](#cli-usage)
+   - [Create a New Migration](#create-a-new-migration)
+   - [Run Migrations](#run-migrations)
+   - [Rollback Migrations](#rollback-migrations)
+   - [Check Status](#check-status)
+   - [CLI Options](#cli-options)
+
+5. [Library Usage (Vapor Integration)](#library-usage-vapor-integration)
+   - [Using Vapor’s Database Connection](#using-vapors-database-connection-recommended)
+   - [Integration in `configure.swift`](#in-configureswift)
+   - [Standalone Usage (Without Vapor)](#standalone-usage-without-vapor)
+   - [Key Differences](#key-difference)
+
+6. [API Reference](#api-reference)
+   - [`Runner`](#runner)
+   - [`Parser`](#parser)
+   - [`Migration`](#migration)
+   - [`SchemaVersion`](#schemaversion)
+
+7. [Database Schema](#database-schema)
+   - [Schema Tracking Table (`owi_schema`)](#database-schema)
+   - [Example Table Content](#database-schema)
+
+8. [Contributing](#contributing)
+
+9. [License](#license)
+
+10. [Inspiration](#inspiration)
+
+
 ## Installation
 
 ### As a Library (for Vapor apps)
@@ -141,26 +188,17 @@ All commands support these options:
 
 ## Library Usage (Vapor Integration)
 
-### In Your Vapor App
+### Using Vapor's Database Connection (Recommended)
+
+When integrating with Vapor, pass your existing database connection to avoid connection pool issues:
 
 ```swift
 import Vapor
 import Owi
-import PostgresKit
 
 func configureMigrations(_ app: Application) async throws {
-    // Create configuration using native PostgresKit types
-    let config = PostgresConfiguration(
-        hostname: "localhost",
-        port: 5432,
-        username: "postgres",
-        password: "postgres",
-        database: "myapp",
-        tls: .disable
-    )
-    
-    // Create Owi driver
-    let driver = try await PostgresDriver(configuration: config)
+    // Use Vapor's existing database connection - no pool management needed!
+    let driver = PostgresDriver(database: app.db(.psql))
     
     // Create runner
     let runner = Runner(
@@ -170,8 +208,19 @@ func configureMigrations(_ app: Application) async throws {
     
     // Run migrations
     try await runner.migrate()
-    try await runner.close()
+    
+    // No need to call close() - Vapor manages the connection!
 }
+```
+
+**For MySQL:**
+```swift
+let driver = MySQLDriver(database: app.db(.mysql))
+```
+
+**For SQLite:**
+```swift
+let driver = SQLiteDriver(database: app.db(.sqlite))
 ```
 
 ### In `configure.swift`
@@ -187,17 +236,26 @@ public func configure(_ app: Application) async throws {
 }
 ```
 
-### Manual Control
+### Standalone Usage (Without Vapor)
+
+If you're building a CLI tool or not using Vapor, create your own connection:
 
 ```swift
 import Owi
-import SQLiteKit
+import PostgresKit
 
-// Create configuration using native SQLiteKit types
-let config = SQLiteConfiguration(storage: .file(path: "./db.sqlite"))
+// Create configuration using native PostgresKit types
+let config = PostgresConfiguration(
+    hostname: "localhost",
+    port: 5432,
+    username: "postgres",
+    password: "postgres",
+    database: "myapp",
+    tls: .disable
+)
 
-// Create driver
-let driver = try await SQLiteDriver(configuration: config)
+// Create driver (manages its own connection pool)
+let driver = try await PostgresDriver(configuration: config)
 
 // Create runner
 let runner = Runner(driver: driver, migrationDir: "./Migrations")
@@ -211,74 +269,13 @@ try await runner.status()
 // Rollback
 try await runner.rollback(count: 1)
 
-// Clean up
+// IMPORTANT: Close the connection when done!
 try await runner.close()
 ```
 
-## Example Project Structure
-
-```
-MyVaporApp/
-├── Package.swift
-├── Sources/
-│   └── App/
-│       ├── configure.swift
-│       └── ...
-├── Migrations/
-│   ├── 001_create_users_table.sql
-│   ├── 002_create_posts_table.sql
-│   └── 003_add_indexes.sql
-└── ...
-```
-
-## Database Support
-
-### SQLite
-
-```swift
-import SQLiteKit
-
-let config = SQLiteConfiguration(storage: .file(path: "./database.sqlite"))
-// Or for in-memory database:
-// let config = SQLiteConfiguration(storage: .memory)
-
-let driver = try await SQLiteDriver(configuration: config)
-```
-
-### PostgreSQL
-
-```swift
-import PostgresKit
-
-let config = PostgresConfiguration(
-    hostname: "localhost",
-    port: 5432,
-    username: "postgres",
-    password: "postgres",
-    database: "myapp",
-    tls: .disable
-)
-
-let driver = try await PostgresDriver(configuration: config)
-```
-
-### MySQL
-
-```swift
-import MySQLKit
-
-let config = MySQLConfiguration(
-    hostname: "localhost",
-    port: 3306,
-    username: "root",
-    password: "password",
-    database: "myapp"
-)
-
-let driver = try await MySQLDriver(configuration: config)
-```
-
-**Note:** Owi uses the native configuration types from PostgresKit, MySQLKit, and SQLiteKit, so you can use all the configuration options provided by those libraries.
+**Key Difference:**
+- **With Vapor database**: `PostgresDriver(database: app.db(.psql))` - NO `close()` needed
+- **With configuration**: `PostgresDriver(configuration: config)` - MUST call `close()`
 
 ## API Reference
 
