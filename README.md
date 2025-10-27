@@ -356,12 +356,6 @@ id | version | dirty | modified_at
 1  | 3       | 0     | 2025-10-26 20:08:53
 ```
 
-**Benefits of single-row design:**
-- Minimal storage footprint (always 1 row regardless of migration count)
-- Fast queries (no table scans)
-- Dirty flag protection (prevents running migrations during incomplete state)
-- Simple and efficient
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
