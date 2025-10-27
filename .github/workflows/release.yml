@@ -13,13 +13,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Release
-        run: swift build -c release --arch arm64 --arch x86_64
+      - name: Build Release ARM64
+        run: swift build -c release --arch arm64
+
+      - name: Build Release x86_64
+        run: swift build -c release --arch x86_64
+
+      - name: Create Universal Binary
+        run: |
+          mkdir -p release
+          lipo -create \
+            .build/arm64-apple-macosx/release/owi \
+            .build/x86_64-apple-macosx/release/owi \
+            -output release/owi
 
       - name: Package Binary
         run: |
-          mkdir -p release
-          cp .build/apple/Products/Release/owi release/
           cd release
           tar -czf owi-macos.tar.gz owi
           shasum -a 256 owi-macos.tar.gz > owi-macos.tar.gz.sha256

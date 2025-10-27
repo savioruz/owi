@@ -17,7 +17,7 @@ let package = Package(
         ),
         .executable(
             name: "owi",
-            targets: ["owi-cli"]
+            targets: ["OwiCLI"]
         ),
     ],
     dependencies: [
@@ -36,7 +36,7 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "owi-cli",
+            name: "OwiCLI",
             dependencies: [
                 "Owi",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
