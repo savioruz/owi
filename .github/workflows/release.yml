@@ -42,28 +42,37 @@ jobs:
   build-linux:
     name: Build Linux Binary
     runs-on: ubuntu-latest
-    container:
-      image: swift:5.10
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        if: matrix.arch == 'aarch64'
+        uses: docker/setup-qemu-action@v3
+
       - name: Build Release
-        run: swift build -c release
+        run: |
+          docker run --rm -v "$PWD:/workspace" -w /workspace \
+            --platform linux/${{ matrix.arch == 'aarch64' && 'arm64' || 'amd64' }} \
+            swift:5.10 \
+            swift build -c release
 
       - name: Package Binary
         run: |
           mkdir -p release
           cp .build/release/owi release/
           cd release
-          tar -czf owi-linux.tar.gz owi
-          sha256sum owi-linux.tar.gz > owi-linux.tar.gz.sha256
+          tar -czf owi-linux-${{ matrix.arch }}.tar.gz owi
+          sha256sum owi-linux-${{ matrix.arch }}.tar.gz > owi-linux-${{ matrix.arch }}.tar.gz.sha256
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: owi-linux
-          path: release/owi-linux.tar.gz*
+          name: owi-linux-${{ matrix.arch }}
+          path: release/owi-linux-${{ matrix.arch }}.tar.gz*
 
   create-release:
     name: Create Release
@@ -81,10 +90,16 @@ jobs:
           name: owi-macos
           path: release
 
-      - name: Download Linux Artifact
+      - name: Download Linux x86_64 Artifact
         uses: actions/download-artifact@v4
         with:
-          name: owi-linux
+          name: owi-linux-x86_64
+          path: release
+
+      - name: Download Linux ARM64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: owi-linux-aarch64
           path: release
 
       - name: Create Release
@@ -96,8 +111,10 @@ jobs:
           files: |
             release/owi-macos.tar.gz
             release/owi-macos.tar.gz.sha256
-            release/owi-linux.tar.gz
-            release/owi-linux.tar.gz.sha256
+            release/owi-linux-x86_64.tar.gz
+            release/owi-linux-x86_64.tar.gz.sha256
+            release/owi-linux-aarch64.tar.gz
+            release/owi-linux-aarch64.tar.gz.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -127,8 +144,14 @@ jobs:
             end
             
             on_linux do
-              url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/owi-linux.tar.gz"
-              sha256 "LINUX_SHA256"
+              on_intel do
+                url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/owi-linux-x86_64.tar.gz"
+                sha256 "LINUX_X86_64_SHA256"
+              end
+              on_arm do
+                url "https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/owi-linux-aarch64.tar.gz"
+                sha256 "LINUX_AARCH64_SHA256"
+              end
             end
             
             def install
@@ -136,7 +159,7 @@ jobs:
             end
             
             test do
-              system "#{bin}/owi", "--version"
+              system "#{bin}/owi", "--help"
             end
           end
           EOF
