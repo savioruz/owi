@@ -6,6 +6,7 @@
 
 
 A clean and simple database migration tool for Swift, designed to work seamlessly with Vapor and other Swift web frameworks.
+See [Changelogs](CHANGELOG.md)
 
 # Table of Contents
 
