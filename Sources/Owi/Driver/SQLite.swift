@@ -35,7 +35,7 @@ public final class SQLiteDriver: DatabaseDriver, @unchecked Sendable {
       logger: Logger(label: "owi.sqlite"),
       on: eventLoopGroup!.next()
     ).get()
-    
+
     self.db = nil
     self.shouldClose = true
   }

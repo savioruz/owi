@@ -1,4 +1,4 @@
-.PHONY: help build clean test release install
+.PHONY: help build clean lint test release install
 
 help: ## Display this help screen
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_.-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -25,3 +25,5 @@ uninstall: ## Uninstall CLI from /usr/local/bin
 format: ## Format code (requires swift-format)
 	swift format --in-place --recursive Sources Tests
 
+lint: ## Lint code)
+	swift format lint --recursive Sources Tests
