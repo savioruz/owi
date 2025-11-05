@@ -1,5 +1,5 @@
 {
-  "originHash" : "9a4841705cc9e300582acb6254762b50d6e2b89c2c2054a76b1b51804547746b",
+  "originHash" : "d401a2a66985dcfb932721aad1b569349388da79d964024a8a6b967a6e4854ab",
   "pins" : [
     {
       "identity" : "async-kit",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/vapor/postgres-kit.git",
       "state" : {
-        "revision" : "d2fd3172c2e318bd292a4c1297e4c65a418cf6f3",
-        "version" : "2.14.1"
+        "revision" : "fe44bbe35a6852730e76891b1fb36c533ecec3f6",
+        "version" : "2.15.0"
       }
     },
     {
@@ -159,8 +159,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio.git",
       "state" : {
-        "revision" : "4e8f4b1c9adaa59315c523540c1ff2b38adc20a9",
-        "version" : "2.87.0"
+        "revision" : "a24771a4c228ff116df343c85fcf3dcfae31a06c",
+        "version" : "2.88.0"
       }
     },
     {
@@ -168,8 +168,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio-ssl.git",
       "state" : {
-        "revision" : "d3bad3847c53015fe8ec1e6c3ab54e53a5b6f15f",
-        "version" : "2.35.0"
+        "revision" : "173cc69a058623525a58ae6710e2f5727c663793",
+        "version" : "2.36.0"
       }
     },
     {

@@ -46,14 +46,10 @@ public struct Runner: Sendable {
       return
     }
 
-    print("Running \(pending.count) migration(s)...")
-
     for migration in pending {
       guard let version = migration.version else {
         throw MigrationError.databaseError("Migration \(migration.id) has no version")
       }
-
-      print("  Applying: \(migration.id)")
 
       // Set dirty flag before migration
       try await tracker.setVersion(version, dirty: true)
@@ -64,10 +60,8 @@ public struct Runner: Sendable {
       // Clear dirty flag after successful migration
       try await tracker.setVersion(version, dirty: false)
 
-      print("  ✓ Applied: \(migration.id)")
+      print("  ✓ \(migration.id)")
     }
-
-    print("Migration complete!")
   }
 
   /// Rollback the last N migrations
@@ -102,14 +96,10 @@ public struct Runner: Sendable {
       return
     }
 
-    print("Rolling back \(toRollback.count) migration(s)...")
-
     for migration in toRollback {
       guard let version = migration.version else {
         continue
       }
-
-      print("  Reverting: \(migration.id)")
 
       // Set dirty flag before rollback
       try await tracker.setVersion(version, dirty: true)
@@ -120,10 +110,8 @@ public struct Runner: Sendable {
       // Update to previous version and clear dirty flag
       try await tracker.setVersion(version - 1, dirty: false)
 
-      print("  ✓ Reverted: \(migration.id)")
+      print("  ⮐ \(migration.id)")
     }
-
-    print("Rollback complete!")
   }
 
   /// Show migration status
