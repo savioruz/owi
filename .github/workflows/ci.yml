@@ -29,6 +29,9 @@ jobs:
     container:
       image: swift:5.10
     steps:
+      - name: Install Dependencies
+        run: apt-get update && apt-get install -y make
+
       - name: Checkout code
         uses: actions/checkout@v5
 
