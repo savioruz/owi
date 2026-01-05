@@ -1,0 +1,44 @@
+{
+  "name": "owi",
+  "version": "0.0.5",
+  "description": "Simple database migration tool for Swift and Vapor",
+  "main": "index.js",
+  "bin": {
+    "owi": "./bin/owi"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/savioruz/owi.git"
+  },
+  "keywords": [
+    "migration",
+    "database",
+    "swift",
+    "vapor",
+    "cli",
+    "postgres",
+    "mysql",
+    "sqlite"
+  ],
+  "author": "savioruz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/savioruz/owi/issues"
+  },
+  "homepage": "https://github.com/savioruz/owi#readme",
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "files": [
+    "install.js",
+    "bin/"
+  ]
+}

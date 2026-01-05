@@ -8,3 +8,7 @@ DerivedData/
 .netrc
 
 *.db
+
+# npm
+node_modules/
+bin/
