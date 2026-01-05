@@ -1,5 +1,5 @@
 {
-  "name": "owi",
+  "name": "@savioruz/owi",
   "version": "0.0.5",
   "description": "Simple database migration tool for Swift and Vapor",
   "main": "index.js",

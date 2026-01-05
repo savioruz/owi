@@ -67,7 +67,7 @@ async function install() {
     const version = getVersion();
     
     // Use latest if version is development
-    const versionTag = version === '0.0.0-development' ? 'latest/download' : `download/v${version}`;
+    const versionTag = version === '0.0.5' ? 'latest/download' : `download/v${version}`;
     const url = `https://github.com/${REPO}/releases/${versionTag}/${platformFile}`;
     
     console.log(`Downloading owi from ${url}...`);
